@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Trophy, Target, Brain, Zap, Heart, Sparkles, BookOpen, Dumbbell, PenTool, Coffee, Award, TrendingUp } from 'lucide-react';
+import { Star, Trophy, Target, Brain, Zap, Heart, Sparkles, BookOpen, Dumbbell, PenTool, Coffee, Award, TrendingUp, Car } from 'lucide-react';
 import { User, DailyQuest, Reward, Stats, Streaks, TierColors } from './types';
 
 const App = () => {
@@ -115,10 +115,20 @@ const App = () => {
   }, [user]);
 
   const [showReward, setShowReward] = useState<Reward | null>(null);
+  const [showAuthPopup, setShowAuthPopup] = useState<string | null>(null);
+  const [showTierUpgrade, setShowTierUpgrade] = useState(false);
   const [currentTab, setCurrentTab] = useState('quests');
   const [showAuthOptions, setShowAuthOptions] = useState(false);
   const [authStage, setAuthStage] = useState<'method' | 'sns' | 'file'>('method');
   const [currentAuthQuestId, setCurrentAuthQuestId] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (user.tier === 'Bronze' && user.experience >= 200) {
+      setUser(prev => ({ ...prev, tier: 'Silver' }));
+      setShowTierUpgrade(true);
+      setTimeout(() => setShowTierUpgrade(false), 2000);
+    }
+  }, [user.experience, user.tier]);
 
   const tierColors: TierColors = {
     Bronze: 'from-amber-600 to-amber-800',
@@ -267,7 +277,8 @@ const App = () => {
       experience: prev.experience + 10, // Additional XP for final authentication
       experienceToNext: prev.experienceToNext // Keep same for now
     }));
-    alert(`퀘스트 ${questId} 인증 완료 XP 수령!`);
+    setShowAuthPopup(`퀘스트 ${questId} 인증 완료 XP 수령!`);
+    setTimeout(() => setShowAuthPopup(null), 1000);
   };
 
   const getStatColor = (stat: keyof Stats) => {
@@ -618,6 +629,21 @@ const App = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showAuthPopup && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 bg-purple-300/30 backdrop-blur-md border border-purple-200/50 text-white px-6 py-3 rounded-xl animate-auth-pop z-50">
+          {showAuthPopup}
+        </div>
+      )}
+
+      {showTierUpgrade && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="text-center animate-tier-up">
+            <Car className="w-24 h-24 mx-auto text-slate-200" />
+            <div className="mt-4 text-2xl font-bold text-slate-200">실버 티어 승급!</div>
           </div>
         </div>
       )}
