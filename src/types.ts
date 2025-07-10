@@ -36,6 +36,7 @@ export interface DailyQuest {
   iconName: string;
   isAuthenticating?: boolean; // 인증 중 상태
   isAuthenticated?: boolean; // 인증 완료 상태
+  authFailed?: boolean; // 인증 실패 여부
   authXpReceived?: boolean; // 인증 XP 수령 여부
 }
 
