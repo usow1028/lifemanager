@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Trophy, Target, Brain, Zap, Heart, Sparkles, BookOpen, Dumbbell, PenTool, Coffee, Award, TrendingUp } from 'lucide-react';
+import { Star, Trophy, Target, Brain, Zap, Heart, Sparkles, BookOpen, Dumbbell, PenTool, Coffee, Award, TrendingUp, Car, Search } from 'lucide-react';
 import { User, DailyQuest, Reward, Stats, Streaks, TierColors } from './types';
 
 const App = () => {
@@ -115,10 +115,26 @@ const App = () => {
   }, [user]);
 
   const [showReward, setShowReward] = useState<Reward | null>(null);
+  const [showAuthPopup, setShowAuthPopup] = useState<string | null>(null);
+  const [showTierUpgrade, setShowTierUpgrade] = useState(false);
+  const [showExpEffect, setShowExpEffect] = useState(false);
   const [currentTab, setCurrentTab] = useState('quests');
   const [showAuthOptions, setShowAuthOptions] = useState(false);
   const [authStage, setAuthStage] = useState<'method' | 'sns' | 'file'>('method');
   const [currentAuthQuestId, setCurrentAuthQuestId] = useState<number | null>(null);
+
+  const triggerExpEffect = () => {
+    setShowExpEffect(true);
+    setTimeout(() => setShowExpEffect(false), 1000);
+  };
+
+  useEffect(() => {
+    if (user.tier === 'Bronze' && user.experience >= 200) {
+      setUser(prev => ({ ...prev, tier: 'Silver' }));
+      setShowTierUpgrade(true);
+      setTimeout(() => setShowTierUpgrade(false), 2000);
+    }
+  }, [user.experience, user.tier]);
 
   const tierColors: TierColors = {
     Bronze: 'from-amber-600 to-amber-800',
@@ -194,6 +210,7 @@ const App = () => {
           streaks: newStreaks
         };
       });
+      triggerExpEffect();
 
       // 보상 애니메이션
       setShowReward({
@@ -255,6 +272,7 @@ const App = () => {
         experience: prev.experience + 5,
         experienceToNext: prev.experienceToNext,
       }));
+      triggerExpEffect();
     }, 2000);
   };
 
@@ -267,7 +285,9 @@ const App = () => {
       experience: prev.experience + 10, // Additional XP for final authentication
       experienceToNext: prev.experienceToNext // Keep same for now
     }));
-    alert(`퀘스트 ${questId} 인증 완료 XP 수령!`);
+    triggerExpEffect();
+    setShowAuthPopup('인증 완료!');
+    setTimeout(() => setShowAuthPopup(null), 1000);
   };
 
   const getStatColor = (stat: keyof Stats) => {
@@ -315,11 +335,17 @@ const App = () => {
         </div>
         
         {/* 경험치 바 */}
-        <div className="mt-3 bg-black/30 rounded-full h-2">
-          <div 
+        <div className="mt-3 bg-black/30 rounded-full h-2 relative overflow-visible">
+          <div
             className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full transition-all duration-500"
             style={{ width: `${(user.experience / user.experienceToNext) * 100}%` }}
           />
+          {showExpEffect && (
+            <Search
+              className="absolute -top-2 text-yellow-300 w-4 h-4 animate-exp-loupe"
+              style={{ left: `calc(${(user.experience / user.experienceToNext) * 100}% - 0.5rem)` }}
+            />
+          )}
         </div>
       </div>
 
@@ -618,6 +644,23 @@ const App = () => {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showAuthPopup && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-purple-300/30 backdrop-blur-md border border-purple-200/50 text-white px-6 py-3 rounded-xl animate-auth-pop">
+            {showAuthPopup}
+          </div>
+        </div>
+      )}
+
+      {showTierUpgrade && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="text-center animate-tier-up">
+            <Car className="w-24 h-24 mx-auto text-slate-200" />
+            <div className="mt-4 text-2xl font-bold text-slate-200">실버 티어 승급!</div>
           </div>
         </div>
       )}
