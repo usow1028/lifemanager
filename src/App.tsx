@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Star, Trophy, Target, Brain, Zap, Heart, Sparkles, BookOpen, Dumbbell, PenTool, Coffee, Award, TrendingUp } from 'lucide-react';
+import { Star, Trophy, Target, Brain, Zap, Heart, Sparkles, BookOpen, Dumbbell, PenTool, Coffee, Award, TrendingUp, Car, Search } from 'lucide-react';
 import { User, DailyQuest, Reward, Stats, Streaks, TierColors } from './types';
 
 const App = () => {
@@ -30,14 +30,75 @@ const App = () => {
   const [dailyQuests, setDailyQuests] = useState<DailyQuest[]>(() => {
     const savedQuests = localStorage.getItem('lifeManagerDailyQuests');
     if (savedQuests) {
-      return JSON.parse(savedQuests);
+      const parsed: DailyQuest[] = JSON.parse(savedQuests);
+      return parsed.map(q => ({ authFailed: false, ...q }));
     }
     return [
-      { id: 1, title: '일기 쓰기', description: '오늘 하루를 한 줄로 기록하기', completed: false, xp: 15, stat: 'charm', iconName: 'PenTool', isAuthenticating: false, isAuthenticated: false, authXpReceived: false },
-    { id: 2, title: '10분 독서', description: '책을 읽고 새로운 지식 습득하기', completed: false, xp: 20, stat: 'intelligence', iconName: 'BookOpen', isAuthenticating: false, isAuthenticated: false, authXpReceived: false },
-    { id: 3, title: '운동 5분', description: '푸쉬업이나 간단한 운동하기', completed: false, xp: 25, stat: 'stamina', iconName: 'Dumbbell', isAuthenticating: false, isAuthenticated: false, authXpReceived: false },
-    { id: 4, title: '새로운 것 배우기', description: '오늘의 퀴즈나 새로운 기술 익히기', completed: false, xp: 30, stat: 'intelligence', iconName: 'Brain', isAuthenticating: false, isAuthenticated: false, authXpReceived: false },
-    { id: 5, title: '명상/휴식', description: '5분간 명상하거나 깊은 호흡하기', completed: false, xp: 18, stat: 'willpower', iconName: 'Coffee', isAuthenticating: false, isAuthenticated: false, authXpReceived: false }
+      {
+        id: 1,
+        title: '일기 쓰기',
+        description: '오늘 하루를 한 줄로 기록하기',
+        completed: false,
+        xp: 15,
+        stat: 'charm',
+        iconName: 'PenTool',
+        isAuthenticating: false,
+        isAuthenticated: false,
+        authFailed: false,
+        authXpReceived: false,
+      },
+      {
+        id: 2,
+        title: '10분 독서',
+        description: '책을 읽고 새로운 지식 습득하기',
+        completed: false,
+        xp: 20,
+        stat: 'intelligence',
+        iconName: 'BookOpen',
+        isAuthenticating: false,
+        isAuthenticated: false,
+        authFailed: false,
+        authXpReceived: false,
+      },
+      {
+        id: 3,
+        title: '운동 5분',
+        description: '푸쉬업이나 간단한 운동하기',
+        completed: false,
+        xp: 25,
+        stat: 'stamina',
+        iconName: 'Dumbbell',
+        isAuthenticating: false,
+        isAuthenticated: false,
+        authFailed: false,
+        authXpReceived: false,
+      },
+      {
+        id: 4,
+        title: '새로운 것 배우기',
+        description: '오늘의 퀴즈나 새로운 기술 익히기',
+        completed: false,
+        xp: 30,
+        stat: 'intelligence',
+        iconName: 'Brain',
+        isAuthenticating: false,
+        isAuthenticated: false,
+        authFailed: false,
+        authXpReceived: false,
+      },
+      {
+        id: 5,
+        title: '명상/휴식',
+        description: '5분간 명상하거나 깊은 호흡하기',
+        completed: false,
+        xp: 18,
+        stat: 'willpower',
+        iconName: 'Coffee',
+        isAuthenticating: false,
+        isAuthenticated: false,
+        authFailed: false,
+        authXpReceived: false,
+      },
     ];
   });
 
@@ -54,9 +115,26 @@ const App = () => {
   }, [user]);
 
   const [showReward, setShowReward] = useState<Reward | null>(null);
+  const [showAuthPopup, setShowAuthPopup] = useState<string | null>(null);
+  const [showTierUpgrade, setShowTierUpgrade] = useState(false);
+  const [showExpEffect, setShowExpEffect] = useState(false);
   const [currentTab, setCurrentTab] = useState('quests');
   const [showAuthOptions, setShowAuthOptions] = useState(false);
+  const [authStage, setAuthStage] = useState<'method' | 'sns' | 'file'>('method');
   const [currentAuthQuestId, setCurrentAuthQuestId] = useState<number | null>(null);
+
+  const triggerExpEffect = () => {
+    setShowExpEffect(true);
+    setTimeout(() => setShowExpEffect(false), 1000);
+  };
+
+  useEffect(() => {
+    if (user.tier === 'Bronze' && user.experience >= 200) {
+      setUser(prev => ({ ...prev, tier: 'Silver' }));
+      setShowTierUpgrade(true);
+      setTimeout(() => setShowTierUpgrade(false), 2000);
+    }
+  }, [user.experience, user.tier]);
 
   const tierColors: TierColors = {
     Bronze: 'from-amber-600 to-amber-800',
@@ -87,9 +165,19 @@ const App = () => {
     const quest = dailyQuests.find(q => q.id === questId);
     if (quest && !quest.completed) {
       // 퀘스트 완료 처리
-      setDailyQuests(prev => prev.map(q => 
-        q.id === questId ? { ...q, completed: true, isAuthenticating: false, isAuthenticated: true } : q
-      ));
+      setDailyQuests(prev =>
+        prev.map(q =>
+          q.id === questId
+            ? {
+                ...q,
+                completed: true,
+                isAuthenticating: false,
+                isAuthenticated: false,
+                authFailed: false,
+              }
+            : q,
+        ),
+      );
 
       // 사용자 스탯 업데이트
       setUser(prev => {
@@ -122,6 +210,7 @@ const App = () => {
           streaks: newStreaks
         };
       });
+      triggerExpEffect();
 
       // 보상 애니메이션
       setShowReward({
@@ -137,31 +226,54 @@ const App = () => {
 
   const handleAuthenticateClick = (questId: number) => {
     setCurrentAuthQuestId(questId);
+    setAuthStage('method');
     setShowAuthOptions(true);
   };
 
-  const handleAuthOptionSelect = (option: 'sns' | 'file', snsType?: string, fileType?: 'mobile' | 'pc') => {
+  const handleAuthMethodSelect = (method: 'sns' | 'file') => {
+    setAuthStage(method);
+  };
+
+  const handleAuthOptionSelect = (
+    option: 'sns' | 'file',
+    snsType?: string,
+    fileType?: 'mobile' | 'pc',
+  ) => {
     if (currentAuthQuestId === null) return;
 
     setShowAuthOptions(false);
-    setDailyQuests(prev => prev.map(q =>
-      q.id === currentAuthQuestId ? { ...q, isAuthenticating: true } : q
-    ));
+    setAuthStage('method');
+    setDailyQuests(prev =>
+      prev.map(q =>
+        q.id === currentAuthQuestId
+          ? { ...q, isAuthenticating: true, authFailed: false }
+          : q,
+      ),
+    );
 
-    // Simulate authentication process
+    // Simulate authentication and ChatGPT verification
     setTimeout(() => {
-      setDailyQuests(prev => prev.map(q =>
-        q.id === currentAuthQuestId ? { ...q, isAuthenticating: false, isAuthenticated: true } : q
-      ));
-      // Optionally, provide initial XP for authentication submission
+      const success = Math.random() > 0.3; // 임시 성공 확률
+      setDailyQuests(prev =>
+        prev.map(q =>
+          q.id === currentAuthQuestId
+            ? {
+                ...q,
+                isAuthenticating: false,
+                isAuthenticated: success,
+                authFailed: !success,
+              }
+            : q,
+        ),
+      );
+      // 제출 시 소량 XP 지급
       setUser(prev => ({
         ...prev,
-        experience: prev.experience + 5, // Small XP for submission
-        experienceToNext: prev.experienceToNext // Keep same for now
+        experience: prev.experience + 5,
+        experienceToNext: prev.experienceToNext,
       }));
-      alert(`퀘스트 ${currentAuthQuestId} 인증 제출 완료!`);
-      setShowAuthOptions(false); // 인증 시뮬레이션 완료 후 모달 닫기
-    }, 2000); // 2초 후 인증 완료 시뮬레이션
+      triggerExpEffect();
+    }, 2000);
   };
 
   const handleAuthComplete = (questId: number) => {
@@ -173,7 +285,9 @@ const App = () => {
       experience: prev.experience + 10, // Additional XP for final authentication
       experienceToNext: prev.experienceToNext // Keep same for now
     }));
-    alert(`퀘스트 ${questId} 인증 완료 XP 수령!`);
+    triggerExpEffect();
+    setShowAuthPopup('인증 완료!');
+    setTimeout(() => setShowAuthPopup(null), 1000);
   };
 
   const getStatColor = (stat: keyof Stats) => {
@@ -221,11 +335,17 @@ const App = () => {
         </div>
         
         {/* 경험치 바 */}
-        <div className="mt-3 bg-black/30 rounded-full h-2">
-          <div 
+        <div className="mt-3 bg-black/30 rounded-full h-2 relative overflow-visible">
+          <div
             className="bg-gradient-to-r from-yellow-400 to-orange-500 h-2 rounded-full transition-all duration-500"
             style={{ width: `${(user.experience / user.experienceToNext) * 100}%` }}
           />
+          {showExpEffect && (
+            <Search
+              className="absolute -top-2 text-yellow-300 w-4 h-4 animate-exp-loupe"
+              style={{ left: `calc(${(user.experience / user.experienceToNext) * 100}% - 0.5rem)` }}
+            />
+          )}
         </div>
       </div>
 
@@ -311,7 +431,7 @@ const App = () => {
                           완료
                         </button>
                       )}
-                      {quest.completed && !quest.isAuthenticated && (
+                      {quest.completed && !quest.isAuthenticating && !quest.isAuthenticated && !quest.authFailed && (
                         <button
                           onClick={() => handleAuthenticateClick(quest.id)}
                           className="bg-gradient-to-r from-green-500 to-teal-600 hover:from-green-600 hover:to-teal-700 px-4 py-2 rounded-lg font-medium transition-all duration-300 transform hover:scale-105"
@@ -321,6 +441,9 @@ const App = () => {
                       )}
                       {quest.completed && quest.isAuthenticating && (
                         <div className="text-yellow-400 font-bold">인증 중...</div>
+                      )}
+                      {quest.completed && quest.authFailed && !quest.isAuthenticating && (
+                        <div className="text-red-500 font-bold">인증 실패</div>
                       )}
                       {quest.completed && quest.isAuthenticated && !quest.authXpReceived && (
                         <button
@@ -462,46 +585,82 @@ const App = () => {
       {showAuthOptions && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50">
           <div className="bg-black/50 backdrop-blur-lg rounded-xl p-6 text-center border border-white/10">
-            <h3 className="text-2xl font-bold text-white mb-6">인증 방식 선택</h3>
-            <div className="space-y-4">
-              <button
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition duration-300"
-                onClick={() => handleAuthOptionSelect('sns')}
-              >
-                SNS 연동
-              </button>
-              <button
-                className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md transition duration-300"
-                onClick={() => handleAuthOptionSelect('file')}
-              >
-                내 파일 선택
-              </button>
-              <button
-                className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-md transition duration-300"
-                onClick={() => setShowAuthOptions(false)}
-              >
-                취소
-              </button>
-            </div>
+            {authStage === 'method' && (
+              <>
+                <h3 className="text-2xl font-bold text-white mb-6">인증 방식 선택</h3>
+                <div className="space-y-4">
+                  <button
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-md transition duration-300"
+                    onClick={() => handleAuthMethodSelect('sns')}
+                  >
+                    SNS 연동
+                  </button>
+                  <button
+                    className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-4 rounded-md transition duration-300"
+                    onClick={() => handleAuthMethodSelect('file')}
+                  >
+                    내 파일 선택
+                  </button>
+                  <button
+                    className="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-3 px-4 rounded-md transition duration-300"
+                    onClick={() => setShowAuthOptions(false)}
+                  >
+                    취소
+                  </button>
+                </div>
+              </>
+            )}
 
-            {/* SNS 선택지 (간단한 시뮬레이션) */}
-            {currentAuthQuestId && (
-              <div className="mt-6 space-y-3">
-                <h4 className="text-xl font-bold text-white mb-3">SNS 선택</h4>
+            {authStage === 'sns' && (
+              <div className="space-y-4">
+                <h3 className="text-2xl font-bold text-white mb-6">SNS 선택</h3>
                 <div className="grid grid-cols-3 gap-3">
                   <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md" onClick={() => { handleAuthOptionSelect('sns', 'facebook'); }}>페이스북</button>
                   <button className="bg-pink-500 hover:bg-pink-600 text-white py-2 rounded-md" onClick={() => { handleAuthOptionSelect('sns', 'instagram'); }}>인스타</button>
-                  <button className="bg-gray-500 hover:bg-gray-600 text-white py-2 rounded-md" onClick={() => { handleAuthOptionSelect('sns', 'threads'); }}>스레드</button>
                   <button className="bg-black hover:bg-gray-800 text-white py-2 rounded-md" onClick={() => { handleAuthOptionSelect('sns', 'x'); }}>X</button>
                   <button className="bg-red-600 hover:bg-red-700 text-white py-2 rounded-md" onClick={() => { handleAuthOptionSelect('sns', 'youtube'); }}>유튜브</button>
                 </div>
-                <h4 className="text-xl font-bold text-white mt-6 mb-3">파일 선택</h4>
+                <button
+                  className="w-full mt-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 rounded-md"
+                  onClick={() => setAuthStage('method')}
+                >
+                  돌아가기
+                </button>
+              </div>
+            )}
+
+            {authStage === 'file' && (
+              <div className="space-y-4">
+                <h3 className="text-2xl font-bold text-white mb-6">파일 선택</h3>
                 <div className="grid grid-cols-2 gap-3">
                   <button className="bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-md" onClick={() => { handleAuthOptionSelect('file', undefined, 'mobile'); }}>모바일</button>
                   <button className="bg-orange-600 hover:bg-orange-700 text-white py-2 rounded-md" onClick={() => { handleAuthOptionSelect('file', undefined, 'pc'); }}>PC</button>
                 </div>
+                <button
+                  className="w-full mt-4 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 rounded-md"
+                  onClick={() => setAuthStage('method')}
+                >
+                  돌아가기
+                </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showAuthPopup && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-purple-300/30 backdrop-blur-md border border-purple-200/50 text-white px-6 py-3 rounded-xl animate-auth-pop">
+            {showAuthPopup}
+          </div>
+        </div>
+      )}
+
+      {showTierUpgrade && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+          <div className="text-center animate-tier-up">
+            <Car className="w-24 h-24 mx-auto text-slate-200" />
+            <div className="mt-4 text-2xl font-bold text-slate-200">실버 티어 승급!</div>
           </div>
         </div>
       )}
